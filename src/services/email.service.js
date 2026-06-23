@@ -24,7 +24,7 @@ transporter.verify((error, success) => {
 const sendEmail = async (to, subject, text, html) => {
   try {
     const info = await transporter.sendMail({
-      from: `"Your Name" <${process.env.EMAIL_USER}>`, // sender address
+      from: `"Banking-Backend" <${process.env.EMAIL_USER}>`, // sender address
       to, // list of receivers
       subject, // Subject line
       text, // plain text body
@@ -46,6 +46,28 @@ async function sendRegistrationEmail(to, name) {
   await sendEmail(to, subject, text, html);
 }
 
+async function sendTransactionEmail(userEmail,name,ammount,toAccount) {
+
+  const subject = 'Transaction Notification';
+  const text = `Hi ${name},\n\nA transaction of amount ${ammount} has been made to account ${toAccount}.\n\nBest regards,\nThe Banking App Team`;
+  const html = `<p>Hi ${name},</p><p>A transaction of amount ${ammount} has been made to account ${toAccount}.</p><p>Best regards,<br>The Banking App Team</p>`;
+
+  await sendEmail(userEmail, subject, text, html);
+
+}
+
+async function sendTransactionFailureEmail(userEmail,name,ammount,toAccount) {
+
+  const subject = 'Transaction Failure Notification';
+  const text = `Hi ${name},\n\nWe regret to inform you that a transaction of amount ${ammount} to account ${toAccount} has failed.\n\nBest regards,\nThe Banking App Team`;
+  const html = `<p>Hi ${name},</p><p>We regret to inform you that a transaction of amount ${ammount} to account ${toAccount} has failed.</p><p>Best regards,<br>The Banking App Team</p>`;
+
+  await sendEmail(userEmail, subject, text, html);
+
+}
+
 module.exports = {
-    sendRegistrationEmail
+    sendRegistrationEmail,
+    sendTransactionEmail,
+    sendTransactionFailureEmail
 };
