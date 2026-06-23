@@ -3,6 +3,8 @@ const jwt = require('jsonwebtoken');
 // At the top of auth.controllers.js
 // const { sendRegistrationEmail } = require('../services/email.service');
 
+const blocklistModel = require('../models/blackList.model');
+
 async function userRegisterController(req, res) {
     try {
         const { email, name, password } = req.body;
@@ -112,7 +114,38 @@ async function userLoginController(req, res) {
 
 }
 
+async function userLogoutController(req, res) {
+   const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
+
+    if (!token) {
+        return res.status(400).json({
+            message: 'No token provided',
+            status: 'failed'
+        });
+    }
+
+    try {
+        // Add the token to the blocklist
+        await blocklistModel.create({ token });
+
+        // Clear the cookie
+        res.clearCookie("token");
+
+        return res.status(200).json({
+            message: 'User logged out successfully',
+            status: 'success'
+        });
+    } catch (error) {
+        console.error("Logout Error:", error);
+        return res.status(500).json({
+            message: 'Internal server error during logout',
+            status: 'error'
+        });
+    }
+}
+
 module.exports = {
     userRegisterController,
-    userLoginController
+    userLoginController,
+    userLogoutController
 };

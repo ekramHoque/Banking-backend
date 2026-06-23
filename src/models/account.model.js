@@ -30,22 +30,37 @@ const accountSchema = new mongoose.Schema({
 accountSchema.index({ user: 1 , status: 1});
 
 accountSchema.methods.getBalance = async function() {
-    
-    const creditEntries = await ledgerModel.aggregate([
-        { $match: { account: this._id, type: "CREDIT" } },
-        { $group: { _id: null, totalCredit: { $sum: "$ammount" } } }
+
+    const result = await ledgerModel.aggregate([
+        { 
+            $match: { 
+                // 🔥 FIX 1: Safely cast to ObjectId
+                account: new mongoose.Types.ObjectId(this._id) 
+            } 
+        },
+        { 
+            $group: { 
+                _id: null, 
+                // 🔥 FIX 2: Fixed the spelling typo from "$ammount" to "$amount"
+                totalCredit: { 
+                    $sum: { $cond: [{ $eq: ["$type", "CREDIT"] }, "$amount", 0] } 
+                },
+                totalDebit: { 
+                    $sum: { $cond: [{ $eq: ["$type", "DEBIT"] }, "$amount", 0] } 
+                }
+            } 
+        }
     ]);
 
-    const debitEntries = await ledgerModel.aggregate([
-        { $match: { account: this._id, type: "DEBIT" } },
-        { $group: { _id: null, totalDebit: { $sum: "$ammount" } } }
-    ]);
+    // If the account has no transactions yet, return 0 balance
+    if (result.length === 0) {
+        return 0;
+    }
 
-    const totalCredit = creditEntries[0] ? creditEntries[0].totalCredit : 0;
-    const totalDebit = debitEntries[0] ? debitEntries[0].totalDebit : 0;
+    const { totalCredit, totalDebit } = result[0];
 
     return totalCredit - totalDebit;
-}
+};
 
 const accountModel = mongoose.model("Account", accountSchema);
 
